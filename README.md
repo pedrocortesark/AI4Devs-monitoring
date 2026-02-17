@@ -173,43 +173,236 @@ Sistema de estado compartido en `memory-bank/`:
 
 ## 🚧 Desafíos y Soluciones
 
-### 1. Error 403 - Autenticación Datadog
+A lo largo de la implementación se fueron encontrando diversos problemas técnicos. A continuación se documenta cada uno con su contexto, diagnóstico y la solución aplicada.
 
-**Problema**: `403 Forbidden` al conectar con API Datadog
+### 1. Error 403 Forbidden - Provider de Datadog no conecta
 
-**Solución**: Configurar `api_url` parametrizable para región EU
+**Contexto**: Al ejecutar `terraform plan`, el provider de Datadog devolvía un error `403 Forbidden` al intentar autenticarse contra la API. Las credenciales (API Key y APP Key) eran correctas.
+
+**Diagnóstico**: La cuenta de Datadog estaba registrada en la **región EU** (`datadoghq.eu`), pero el provider de Terraform apuntaba por defecto a la región US (`datadoghq.com`). Al enviar las credenciales al endpoint incorrecto, la API las rechazaba con un 403.
+
+**Solución**: Se añadió el campo `api_url` al bloque del provider, parametrizado mediante una nueva variable para poder cambiar de región fácilmente:
 ```hcl
+# tf/provider.tf
 provider "datadog" {
+  api_key = var.datadog_api_key
+  app_key = var.datadog_app_key
   api_url = var.datadog_api_url  # https://api.datadoghq.eu
+}
+
+# tf/variables.tf
+variable "datadog_api_url" {
+  description = "Datadog API URL (US: https://api.datadoghq.com, EU: https://api.datadoghq.eu)"
+  type        = string
+  default     = "https://api.datadoghq.eu"
 }
 ```
 
-### 2. S3 Bucket - Conflicto de Nombres
+**Commit**: `813f98f` y `228143f`
 
-**Problema**: `BucketAlreadyExists` por nombres no únicos
+---
 
-**Solución**: Sufijo con account_id
+### 2. Recurso `datadog_integration_aws` faltante
+
+**Contexto**: Tras completar la Fase 1 (IAM Role + Provider), se realizó una auditoría técnica. Aunque el IAM Role con Trust Policy y External ID estaba creado, la integración AWS-Datadog no funcionaba realmente.
+
+**Diagnóstico**: Faltaba el recurso `datadog_integration_aws` en Terraform, que es el que vincula la cuenta de AWS con Datadog. Sin este recurso, el IAM Role existía pero Datadog no sabía que debía asumir ese rol.
+
+**Solución**: Se añadió el recurso de integración en `tf/datadog.tf`, conectando el `account_id` dinámico con el `role_name` del IAM Role existente:
 ```hcl
-bucket = "ai4devs-project-code-bucket-${data.aws_caller_identity.current.account_id}"
+data "aws_caller_identity" "current" {}
+
+resource "datadog_integration_aws" "main" {
+  account_id = data.aws_caller_identity.current.account_id
+  role_name  = aws_iam_role.datadog_integration_role.name
+}
 ```
 
-### 3. Desfase del Terraform State
+**Commit**: `f86318f`
 
-**Problema**: Recursos eliminados manualmente causan drift
+---
 
-**Solución**: Script de limpieza con `terraform state rm`
+### 3. S3 Bucket - Conflicto de nombre global (`BucketAlreadyExists`)
 
-### 4. User Data - Solo Ejecución en Creación
+**Contexto**: Durante el primer `terraform apply`, se crearon 12 de 17 recursos correctamente, pero el bucket S3 falló con un error HTTP 409.
 
-**Problema**: Cambios en `user_data` no se aplican
+**Diagnóstico**: El nombre original del bucket (`ai4devs-project-code-bucket`) ya existía globalmente en AWS. Los nombres de buckets S3 son únicos a nivel mundial, por lo que un nombre genérico tiene alta probabilidad de colisión.
 
-**Solución**: `terraform taint` para forzar recreación
+**Solución**: Se modificó el nombre del bucket para incluir el `account_id` de AWS como sufijo, garantizando unicidad global. Además, se actualizaron los scripts de `user_data` para inyectar el nombre del bucket dinámicamente en lugar de tenerlo hardcodeado:
+```hcl
+# tf/s3.tf
+resource "aws_s3_bucket" "code_bucket" {
+  bucket = "ai4devs-project-code-bucket-${data.aws_caller_identity.current.account_id}"
+}
 
-### 5. Recursos S3 Deprecated
+# tf/ec2.tf - inyección dinámica del nombre del bucket
+user_data = templatefile("scripts/backend_user_data.sh", {
+  bucket_name     = aws_s3_bucket.code_bucket.bucket
+  datadog_api_key = var.datadog_api_key
+})
 
-**Problema**: Warnings de deprecation
+# tf/scripts/backend_user_data.sh - referencia dinámica
+aws s3 cp s3://${bucket_name}/backend.zip /home/ec2-user/backend.zip
+```
 
-**Solución**: Migrar a `aws_s3_object`, eliminar ACL
+**Commit**: `813f98f`
+
+---
+
+### 4. Desfase del Terraform State (drift por eliminación manual)
+
+**Contexto**: Se habían eliminado recursos de AWS manualmente (vía consola) durante pruebas anteriores. Al ejecutar `terraform plan`, Terraform intentaba gestionar recursos que ya no existían, generando errores masivos de permisos y estado inconsistente.
+
+**Diagnóstico**: El archivo de estado local (`terraform.tfstate`) seguía referenciando recursos (EC2, S3, IAM, Security Groups) que habían sido borrados fuera de Terraform. Cada operación de plan/apply intentaba leer estos recursos y fallaba.
+
+**Solución**: Se creó un script de limpieza (`tf/cleanup-state.sh`) que elimina las referencias huérfanas del state sin tocar los recursos reales de AWS. Esto permitió hacer un despliegue limpio desde cero:
+```bash
+# tf/cleanup-state.sh (extracto)
+terraform state rm 'aws_iam_role.ec2_role' || true
+terraform state rm 'aws_instance.backend' || true
+terraform state rm 'aws_instance.frontend' || true
+terraform state rm 'aws_s3_bucket.code_bucket' || true
+terraform state rm 'aws_security_group.backend_sg' || true
+# ... etc.
+```
+
+**Commit**: `813f98f`
+
+---
+
+### 5. Agente Datadog reportando a región incorrecta (US en vez de EU)
+
+**Contexto**: Tras el primer despliegue exitoso, los hosts no aparecían en la consola de Datadog EU. La infraestructura estaba levantada y el agente instalado, pero no se veían métricas.
+
+**Diagnóstico**: La auditoría de Fase 2 reveló que el script de `user_data` instalaba el agente con `DD_SITE="datadoghq.com"` (región US), mientras que la cuenta de Datadog estaba en EU. Las métricas se estaban enviando al endpoint equivocado y se descartaban silenciosamente.
+
+**Solución**: Se corrigió el parámetro `DD_SITE` en ambos scripts de instalación y se añadieron tags personalizados y hostnames descriptivos para mejorar la trazabilidad:
+```bash
+# tf/scripts/backend_user_data.sh
+DD_API_KEY=${datadog_api_key} \
+DD_SITE="datadoghq.eu" \
+DD_TAGS="project:lti-monitoring,env:dev,service:backend,component:api" \
+DD_HOSTNAME="lti-backend-prod" \
+bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+```
+
+**Impacto**: Las instancias EC2 tuvieron que ser **recreadas** ya que `user_data` solo se ejecuta en la creación de la instancia (ver problema #6).
+
+**Commit**: `228143f`
+
+---
+
+### 6. Cambios en `user_data` no se aplican a instancias existentes
+
+**Contexto**: Al modificar los scripts de `user_data` (corrección de región, adición de tags), un simple `terraform apply` no aplicaba los cambios porque las instancias ya existían.
+
+**Diagnóstico**: AWS ejecuta el script `user_data` **únicamente en el momento de la creación** de la instancia EC2. Modificar el contenido del script en Terraform no tiene efecto sobre instancias que ya están corriendo.
+
+**Solución**: Se usó `terraform taint` para marcar las instancias como "dañadas", forzando su destrucción y recreación en el siguiente `apply`:
+```bash
+terraform taint aws_instance.backend
+terraform taint aws_instance.frontend
+terraform apply
+```
+
+**Resultado**: Las instancias anteriores (`i-09e72a3add200405f`, `i-00fa4067c8c00dbc0`) fueron terminadas y se crearon nuevas (`i-0a06e794b5e6d4a92`, `i-0b392c10d66e0ce98`) con la configuración correcta de región EU.
+
+**Commit**: `228143f` (config) → aplicado manualmente con `terraform apply`
+
+---
+
+### 7. Recursos S3 con APIs deprecated
+
+**Contexto**: `terraform plan` mostraba múltiples warnings de deprecation relacionados con la configuración de S3.
+
+**Diagnóstico**: Se estaban usando dos patrones obsoletos:
+1. El argumento `acl = "private"` dentro de `aws_s3_bucket`, deprecated desde el provider AWS 4.x.
+2. El recurso `aws_s3_bucket_object`, reemplazado por `aws_s3_object`.
+
+**Solución**: Se modernizó el código eliminando el ACL (S3 es privado por defecto desde abril 2023) y migrando al recurso actual:
+```hcl
+# Antes (deprecated)
+resource "aws_s3_bucket" "code_bucket" {
+  bucket = "ai4devs-project-code-bucket"
+  acl    = "private"  # deprecated
+}
+resource "aws_s3_bucket_object" "backend_zip" { ... }
+
+# Después (moderno)
+resource "aws_s3_bucket" "code_bucket" {
+  bucket = "ai4devs-project-code-bucket-${data.aws_caller_identity.current.account_id}"
+  # S3 es privado por defecto desde abril 2023, no necesita ACL
+}
+resource "aws_s3_object" "backend_zip" { ... }
+```
+
+**Commit**: `813f98f`
+
+---
+
+### 8. Archivos de estado de Terraform subidos al repositorio Git
+
+**Contexto**: Tras varios ciclos de `terraform apply`, los archivos `terraform.tfstate` y `terraform.tfstate.backup` se habían incluido accidentalmente en el repositorio Git, exponiendo información sensible sobre la infraestructura.
+
+**Diagnóstico**: El `.gitignore` inicial no cubría todos los patrones de archivos de estado de Terraform.
+
+**Solución**: Se actualizó el `.gitignore`, se eliminaron los archivos del índice de Git (sin borrarlos del disco) y se configuró VS Code para ocultarlos del explorador:
+```bash
+# Limpieza del índice Git
+git rm --cached tf/terraform.tfstate
+git rm --cached tf/terraform.tfstate.backup
+
+# .gitignore actualizado
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+```
+
+**Commit**: `0b04ff2` (eliminación de archivos) y `813f98f` (actualización de `.gitignore`)
+
+---
+
+### 9. Agentes sin identificación (hostname genérico y sin tags)
+
+**Contexto**: Tras confirmar que las métricas llegaban a Datadog, la auditoría de Fase 2 reveló que los hosts aparecían con nombres genéricos de EC2 (tipo `ip-172-31-xx-xx`) y sin tags personalizados, haciendo imposible filtrar métricas en el dashboard.
+
+**Diagnóstico**: El script de instalación del agente no configuraba `DD_HOSTNAME` ni `DD_TAGS`, por lo que el agente usaba los valores por defecto de la instancia EC2.
+
+**Solución**: Se añadieron variables de entorno en el script de instalación para asignar hostnames descriptivos y tags de proyecto:
+```bash
+DD_HOSTNAME="lti-backend-prod"
+DD_TAGS="project:lti-monitoring,env:dev,service:backend,component:api"
+```
+
+Esto permitió:
+- Filtrar por `project:lti-monitoring` en todos los widgets del dashboard
+- Agrupar hosts por `service` en el Host Map
+- Identificar rápidamente cada instancia en la consola
+
+**Commit**: `228143f`
+
+---
+
+### 10. Autenticación AWS con claves estáticas inseguras
+
+**Contexto**: Inicialmente se configuró la autenticación de AWS en Terraform usando claves de acceso estáticas (Access Key + Secret Key), lo cual es una práctica desaconsejada por motivos de seguridad.
+
+**Diagnóstico**: Las claves estáticas tienen riesgo de filtración y no expiran automáticamente. AWS recomienda usar mecanismos de autenticación temporales.
+
+**Solución**: Se migró a autenticación mediante **AWS CLI V2**, que soporta SSO y credenciales temporales. El provider de Terraform hereda automáticamente las credenciales de la sesión activa:
+```hcl
+# tf/provider.tf - Sin claves hardcodeadas
+provider "aws" {
+  region = "us-east-1"
+  # Usa automáticamente las credenciales de AWS CLI V2:
+  #   - aws sso login
+  #   - Variables de entorno (AWS_PROFILE)
+  #   - ~/.aws/credentials
+}
+```
+
+**Commit**: `813f98f`
 
 ---
 
@@ -320,14 +513,16 @@ sudo datadog-agent status
 
 ## 🎓 Lecciones Aprendidas
 
-1. Verificar región Datadog (US vs EU) en provider y agent
-2. S3 buckets requieren nombres globalmente únicos
-3. User data solo ejecuta en creación (usar `terraform taint`)
-4. Mantener sincronizado terraform state
-5. Actualizar recursos deprecated periódicamente
-6. External ID mejora seguridad en integraciones
-7. Tags facilitan filtrado en dashboards
-8. Hostnames descriptivos mejoran trazabilidad
+1. **Consistencia de región**: Verificar que la región de Datadog (US vs EU) sea la misma en el provider de Terraform Y en el agente instalado en las instancias
+2. **Nombres únicos en S3**: Los buckets requieren nombres globalmente únicos; usar el `account_id` como sufijo es un patrón fiable
+3. **Inmutabilidad de user_data**: El script `user_data` de EC2 solo se ejecuta en la creación; para aplicar cambios hay que recrear la instancia con `terraform taint`
+4. **Sincronización del state**: Nunca eliminar recursos de AWS manualmente si están gestionados por Terraform; si ocurre, limpiar el state con `terraform state rm`
+5. **Recursos deprecated**: Actualizar proactivamente recursos como `aws_s3_bucket_object` → `aws_s3_object` y eliminar ACLs innecesarios
+6. **External ID**: Usar External ID en Trust Policies mejora la seguridad de integraciones con terceros (patrón "confused deputy")
+7. **Tags desde el inicio**: Configurar `DD_TAGS` y `DD_HOSTNAME` desde el primer despliegue ahorra retrabajos y facilita enormemente el filtrado en dashboards
+8. **Credenciales temporales**: Preferir AWS CLI V2 / SSO sobre claves estáticas para autenticación de Terraform
+9. **Auditorías entre fases**: Realizar una auditoría técnica antes de cerrar cada fase permite detectar componentes faltantes (como el recurso `datadog_integration_aws`)
+10. **No commitear state**: Incluir `*.tfstate*` y `*.tfvars` en `.gitignore` desde el primer momento para evitar exponer infraestructura y secretos
 
 ---
 
