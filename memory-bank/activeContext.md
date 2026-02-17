@@ -16,5 +16,10 @@
 -   [x] Define Datadog Dashboard in Terraform.
 -   [ ] Run `terraform plan` & `apply` (User Action Required).
 
+## Next Steps (from `plan.md`)
+-   [ ] Modificación de la instancia EC2 existente.
+-   [ ] Verificación de reporte de métricas en la consola de Datadog.
+
+
 ## Open Questions/Issues
 -   User needs to provide `DATADOG_API_KEY` and `DATADOG_APP_KEY`.
