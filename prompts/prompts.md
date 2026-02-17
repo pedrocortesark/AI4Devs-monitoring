@@ -161,3 +161,206 @@ Auditoría completa de Fase 1 con identificación de componente faltante crític
 **Resumen de Acción:**
 Implementación del recurso `datadog_integration_aws` para vincular IAM Role de AWS con cuenta de Datadog. Cierre técnico de Fase 1 con actualización completa del Memory Bank.
 ---
+
+## [20260217-1315-005] - Implementación de Datadog Agent vía User Data (IaC)
+**Fecha:** 2026-02-17 13:15
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Fase 2 - Despliegue de Infraestructura y Agente (100% IaC)
+>
+> Actúa como Architect Agent. Vamos a implementar la instalación del agente de Datadog de forma totalmente automatizada dentro de nuestra infraestructura de Terraform.
+>
+> ## 1. REGISTRO EN BITÁCORA (Protocolo AGENTS.md)
+> - Registra en `prompts.md` con el ID: `20260217-1315-005`.
+> - **Título**: Implementación de Datadog Agent vía User Data (IaC).
+> - **Resumen**: Automatización de la instalación del agente en EC2 y actualización de recursos de infraestructura.
+>
+> ## 2. ACCIÓN TÉCNICA (Terraform - IaC)
+> - **EC2 User Data**: Modifica el recurso `aws_instance` para incluir un bloque `user_data`. 
+> - **Script de Instalación**: El script debe:
+>     1. Descargar e instalar el agente de Datadog para Amazon Linux/Ubuntu (según la AMI usada).
+>     2. Configurar la `DD_API_KEY` inyectando dinámicamente el valor de nuestra variable `var.datadog_api_key`.
+>     3. Iniciar el servicio del agente automáticamente.
+> - **Seguridad**: Asegúrate de que el script no exponga la API Key en texto plano en los logs si es posible, o confirma que la variable está marcada como `sensitive`.
+>
+> ## 3. ACTUALIZACIÓN DEL SHARED STATE (Memory Bank)
+> - **plan.md**: Marca la **Fase 2** como `[IN PROGRESS]`.
+> - **systemPatterns.md**: Actualiza el flujo para mostrar cómo la EC2 ahora "empuja" métricas hacia Datadog a través del agente instalado por `user_data`.
+> - **activeContext.md**: Estado: "Configurando el script de aprovisionamiento de la EC2. Preparado para el primer terraform apply".
+>
+> ## 4. VERIFICACIÓN
+> - Antes de aplicar, analízame si la instancia EC2 tiene salida a internet (VPC/IGW) para poder descargar el agente de los repositorios de Datadog.
+>
+> ¿Entendido? Procede a modificar el código de la EC2 para automatizar la instalación del agente.
+
+**Resumen de Acción:**
+Verificación de implementación existente de User Data con Datadog Agent. Análisis de conectividad de red (VPC por defecto + Security Groups con egress abierto). Fase 2 de código IaC completada.
+---
+
+## [20260217-1335-006] - Autenticación vía AWS CLI V2 (Login/SSO)
+**Fecha:** 2026-02-17 13:35
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Configuración de Identidad vía AWS CLI V2 y Limpieza de State
+>
+> Actúa como Architect Agent. He decidido utilizar el método de autenticación moderno (AWS CLI V2 / Login) para evitar el uso de llaves estáticas.
+>
+> ## 1. REGISTRO EN BITÁCORA (Protocolo AGENTS.md)
+> - Registra en `prompts.md` con el ID: `20260217-1335-006`.
+> - **Título**: Autenticación vía AWS CLI V2 (Login/SSO).
+> - **Resumen**: Configuración de perfil de AWS para Terraform y preparación para la resolución de errores 403.
+>
+> ## 2. ACTUALIZACIÓN TÉCNICA
+> - **provider.tf**: Revisa si el bloque `provider "aws"` necesita que especifiquemos un `profile` (ej. "default" o el nombre de tu sesión SSO).
+> - **techContext.md**: Actualiza la sección de "Requisitos de Entorno" indicando que se usa `aws sso login` para la autenticación.
+>
+> ## 3. LIMPIEZA DEL "MURO DE ROJO" (Terraform State)
+> - Dado que ahora tengo credenciales válidas, pero el `terraform plan` anterior mostró que muchos recursos (S3, IAM, SG) fueron eliminados manualmente fuera de Terraform:
+> - **Acción**: Dame los comandos `terraform state rm` exactos para los recursos que aparecen como "deleted" en el log anterior. 
+> - **Objetivo**: Limpiar el archivo de estado local para que el próximo `plan` proponga crear todo desde cero sin errores de permisos 403.
+>
+> ## 4. ESTADO DEL PLAN (Memory Bank)
+> - **activeContext.md**: Actualiza a "Identidad configurada vía CLI V2. Iniciando purga de recursos inexistentes en el State".
+>
+> ¿Entendido? Procede a documentar el cambio y dame la lista de comandos para limpiar mi entorno local.
+
+**Resumen de Acción:**
+Migración a autenticación AWS CLI V2. Generación de script de limpieza de Terraform State para recursos eliminados manualmente. Preparación para deployment desde cero.
+---
+
+## [20260217-1350-007] - Limpieza de Deprecations y Debug de Datadog 403
+**Fecha:** 2026-02-17 13:50
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Limpieza de Deprecations y Debug de Datadog 403
+>
+> Actúa como Architect Agent. El acceso a AWS está confirmado (14 recursos detectados), pero el provider de Datadog sigue bloqueado con un error 403. Vamos a profesionalizar el código y resolver el acceso.
+>
+> ## 1. REGISTRO EN BITÁCORA (Protocolo AGENTS.md)
+> - Registra en `prompts.md` con el ID: `20260217-1350-007`.
+> - **Título**: Limpieza de Deprecations y Debug de Datadog 403.
+> - **Resumen**: Refactorización de recursos S3 (acl/object) y ajuste de parámetros de región para el provider Datadog.
+>
+> ## 2. REFACTOR DE CÓDIGO (IaC Moderno)
+> Para eliminar los warnings y seguir las mejores prácticas actuales:
+> - **S3 ACL**: Sustituye el argumento `acl = "private"` dentro de `aws_s3_bucket` por el recurso independiente `aws_s3_bucket_acl`.
+> - **S3 Object**: Cambia todos los recursos `aws_s3_bucket_object` por el recurso moderno `aws_s3_object`.
+>
+> ## 3. SOLUCIÓN AL 403 DE DATADOG (Conexión de Red)
+> - **provider.tf**: Añade el campo `api_url` al bloque de `provider "datadog"`.
+> - **Variable**: Define la variable `datadog_api_url` en `variables.tf`. 
+> - **Lógica**: Asegúrate de que el provider use esta variable. Esto nos permitirá cambiar entre `https://api.datadoghq.com` (US) y `https://api.datadoghq.eu` (EU) desde el archivo `.tfvars`.
+>
+> ## 4. ACTUALIZACIÓN DEL SHARED STATE (Memory Bank)
+> - **plan.md**: Marca la tarea de "Configuración del Provider" como [REVISING] y añade una nota sobre la resolución del error 403.
+> - **activeContext.md**: Estado: "Refactorizando recursos S3 y depurando conexión con Datadog API".
+>
+> ## 5. ENTREGA
+> - Muéstrame cómo queda el bloque del `provider "datadog"` y el nuevo recurso `aws_s3_object`.
+>
+> ¿Entendido? Procede con la limpieza y la corrección técnica.
+
+**Resumen de Acción:**
+Refactorización completa de recursos S3 siguiendo mejores prácticas (aws_s3_bucket_acl + aws_s3_object). Añadida configuración de api_url para Datadog provider con variable parametrizable para resolución de error 403.
+---
+
+## [20260217-1350-008] - Terraform Apply - Deployment Parcial Exitoso
+**Fecha:** 2026-02-17 13:50
+**Prompt Original:**
+> terraform apply
+
+**Resumen de Acción:**
+Ejecución de terraform apply con resultado parcial exitoso. Creados 12 de 17 recursos. Error en bucket S3 por conflicto de nombre (BucketAlreadyExists). AWS y Datadog integrados correctamente, EC2 instances desplegadas con Datadog Agent.
+
+**Recursos Creados Exitosamente:**
+- ✅ IAM: ec2_role, datadog_integration_role, instance_profile, policy_attachment
+- ✅ EC2: backend (i-09e72a3add200405f), frontend (i-00fa4067c8c00dbc0)
+- ✅ Security Groups: backend_sg, frontend_sg
+- ✅ Datadog: integration_aws (Account 197538345061), dashboard.system_metrics
+- ✅ Null resources: generate_zip
+
+**Error Identificado:**
+- ❌ S3 Bucket "ai4devs-project-code-bucket" ya existe (409 BucketAlreadyExists)
+
+**Acción Requerida:**
+Cambiar nombre del bucket a uno único o importar bucket existente.
+---
+
+## [20260217-1400-009] - Deployment Completo Exitoso
+**Fecha:** 2026-02-17 14:00
+**Prompt Original:**
+> Opcion A, si
+
+**Resumen de Acción:**
+Deployment completo exitoso de infraestructura AWS con integración Datadog. 17 recursos creados incluyendo S3 con nombre único, EC2 con Datadog Agent, IAM roles, Security Groups, Dashboard y AWS Integration.
+
+**Recursos Finales Creados (17):**
+- ✅ S3 Bucket: ai4devs-project-code-bucket-197538345061 (nombre único)
+- ✅ S3 Objects: backend.zip, frontend.zip
+- ✅ EC2 Backend: i-09e72a3add200405f (t2.micro) + Datadog Agent
+- ✅ EC2 Frontend: i-00fa4067c8c00dbc0 (t2.medium) + Datadog Agent
+- ✅ IAM Roles: ec2_role, datadog_integration_role
+- ✅ IAM Policies & Attachments (3 recursos)
+- ✅ Security Groups: backend_sg, frontend_sg
+- ✅ Datadog Integration AWS: Account 197538345061
+- ✅ Datadog Dashboard: 96v-e57-ws8 (LTI System Metrics)
+
+**Soluciones Aplicadas:**
+1. Bucket S3: Nombre dinámico usando account_id para unicidad global
+2. ACL: Eliminado (S3 es privado por defecto desde 2023)
+3. User Data: Bucket name inyectado dinámicamente vía templatefile
+
+**Estado:** DEPLOYMENT COMPLETO ✅
+---
+
+## [20260217-1400-010] - Limpieza de archivos de respaldo de Terraform y reglas de exclusión
+**Fecha:** 2026-02-17 14:00
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Limpieza de Ruido de Estado y Configuración de Exclusión
+>
+> Actúa como Architect Agent. Tenemos una acumulación de archivos `.tfstate.*.backup` que están ensuciando el espacio de trabajo y deben ser excluidos del control de versiones.
+>
+> ## 1. REGISTRO EN BITÁCORA (Protocolo AGENTS.md)
+> - Registra en `prompts.md` con el ID: `20260217-1400-010`.
+> - **Título**: Limpieza de archivos de respaldo de Terraform y reglas de exclusión.
+> - **Resumen**: Actualización de .gitignore y recomendaciones de visualización para ocultar backups de estado.
+>
+> ## 2. ACCIÓN TÉCNICA (Git & Workspace)
+> - **.gitignore**: Asegúrate de que existan las siguientes entradas para evitar que estos archivos se suban al repositorio:
+>     ```text
+>     *.tfstate
+>     *.tfstate.*.backup
+>     terraform.tfstate.*
+>     .terraform/
+>     ```
+> - **Limpieza**: Identifica si alguno de estos archivos ya ha sido rastreado por Git y dame el comando `git rm --cached` si fuera necesario para sacarlos del índice.
+>
+> ## 3. CONFIGURACIÓN DEL IDE (Visualización)
+> - Genera o actualiza el archivo `.vscode/settings.json` (o equivalente en Antigravity) para ocultar estos archivos del explorador mediante la regla `files.exclude`.
+>
+> ## 4. ACTUALIZACIÓN DE MEMORIA
+> - **techContext.md**: Añade una nota en "Manejo de Archivos" sobre la política de ignorar backups de estado para mantener el entorno limpio.
+> - **activeContext.md**: Estado: "Ruido visual eliminado. Workspace optimizado para continuar con la Fase 2".
+>
+> ¿Entendido? Procede con la limpieza y dime qué archivos has configurado para ocultar el ruido.
+
+**Resumen de Acción:**
+Limpieza completa del workspace. Actualizado .gitignore con reglas Terraform, eliminados 2 archivos de estado del índice Git (tf/terraform.tfstate, tf/terraform.tfstate.backup), creado .vscode/settings.json con configuración de exclusión visual. Workspace optimizado.
+
+**Archivos Configurados:**
+- ✅ .gitignore: Reglas para *.tfstate, *.tfstate.*, .terraform/
+- ✅ .vscode/settings.json: files.exclude, search.exclude, files.watcherExclude
+- ✅ Git: Eliminados archivos de estado del índice (git rm --cached)
+- ✅ Memory Bank: Actualizado techContext.md y activeContext.md
+
+**Archivos Ocultos del Explorador:**
+- *.tfstate (todos los archivos de estado)
+- *.tfstate.* (backups de estado)
+- .terraform/ (directorio de providers)
+- node_modules/ (dependencias)
+- *.zip (archivos de código)
+- .DS_Store (archivos de macOS)
+
+**Estado:** WORKSPACE LIMPIO ✅
+---

@@ -1,13 +1,17 @@
 # Active Context
 
 ## Current Focus
--   **Phase**: Fase 1 COMPLETADA - Listo para Fase 2 (EC2 & Agent).
--   **Goal**: Deploy infrastructure and verify Datadog Agent reporting.
+-   **Phase**: Workspace Cleanup - Optimización del entorno de desarrollo.
+-   **Goal**: Remove noise files and prepare for Phase 3 (Monitoring Verification).
 
 ## Recent Changes
--   ✅ Fase 1 completada: Integración AWS-Datadog funcional.
--   ✅ Recurso `datadog_integration_aws` implementado correctamente.
--   ✅ Data source `aws_caller_identity` configurado para obtener Account ID dinámicamente.
+-   ✅ Terraform apply completado exitosamente (17 recursos).
+-   ✅ S3 Bucket creado con nombre único: ai4devs-project-code-bucket-197538345061.
+-   ✅ Instancias EC2 actualizadas con nuevo user_data (bucket dinámico).
+-   ✅ Datadog Agent instalado en ambas instancias (backend + frontend).
+-   ✅ Dashboard de Datadog creado: 96v-e57-ws8.
+-   ✅ Integración AWS-Datadog activa (Account: 197538345061).
+-   ✅ Workspace limpio: archivos de estado excluidos del control de versiones.
 
 
 ## Active Tasks

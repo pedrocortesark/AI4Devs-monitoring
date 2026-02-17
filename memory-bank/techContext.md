@@ -16,8 +16,25 @@
 -   **Terraform**: Version 1.x.
 -   **Cloud Provider**: AWS (us-east-1).
 
+## AWS Authentication
+-   **Method**: AWS CLI V2 (modern authentication).
+-   **Setup**: 
+    ```bash
+    # For standard profiles
+    aws configure
+    
+    # For SSO users
+    aws configure sso
+    aws sso login --profile <profile-name>
+    ```
+-   **Terraform Integration**: Uses AWS CLI credentials automatically.
+-   **Profile**: Default profile used unless specified in provider.tf.
+-   **Security**: No static access keys in code - credentials managed by AWS CLI.
+
 ## Deployment Workflow
--   **Configuration**: Copy `tf/terraform.tfvars.example` to `tf/terraform.tfvars` and fill in your secrets.
+-   **Prerequisites**: 
+    1. AWS credentials configured via CLI (`aws configure` or `aws sso login`).
+    2. Copy `tf/terraform.tfvars.example` to `tf/terraform.tfvars` and fill in Datadog secrets.
 -   **Plan**: `cd tf && terraform plan`
 -   **Apply**: `cd tf && terraform apply`
 -   **Note**: Never commit `terraform.tfvars` to the repository.
@@ -36,3 +53,8 @@
 -   Follow the layered architecture in the backend.
 -   Ensure type safety with TypeScript.
 -   Use `prompts.md` for task logging as per `AGENTS.md`.
+
+## File Management
+-   **Terraform State**: All `.tfstate` and backup files are excluded from version control via `.gitignore`.
+-   **Sensitive Files**: `terraform.tfvars` contains secrets and must never be committed.
+-   **IDE Configuration**: `.vscode/settings.json` hides noise files from workspace explorer.

@@ -29,13 +29,20 @@ The project follows a **Monorepo** structure with clear separation between front
 
 ## Monitoring Architecture
 -   **Datadog Agent**: Installed on EC2 instances via User Data script using API Key injection.
+    -   **Installation Script**: [backend_user_data.sh](../tf/scripts/backend_user_data.sh) / [frontend_user_data.sh](../tf/scripts/frontend_user_data.sh)
+    -   **Agent Version**: Datadog Agent 7 (latest stable)
+    -   **API Key Injection**: `var.datadog_api_key` (marked as sensitive)
 -   **AWS-Datadog Integration**: Bidirectional connection established via:
     -   **IAM Role**: `DatadogIntegrationRole` with SecurityAudit policy.
     -   **Trust Relationship**: External ID validated using `datadog_app_key`.
     -   **Datadog Resource**: `datadog_integration_aws` links AWS Account ID with IAM Role.
+-   **Network Configuration**:
+    -   **VPC**: Default VPC (includes Internet Gateway)
+    -   **Security Groups**: Egress rule 0.0.0.0/0 allows outbound traffic to Datadog endpoints
+    -   **Datadog Endpoints**: US region (datadoghq.com)
 -   **Data Flow**:
-    -   EC2 Agents → Datadog API (system metrics via Agent).
-    -   Datadog → AWS CloudWatch (AWS service metrics via IAM Role).
+    -   EC2 Agents → Datadog API (system metrics via Agent): CPU, Memory, Disk, Network I/O
+    -   Datadog → AWS CloudWatch (AWS service metrics via IAM Role): EC2, S3, IAM metadata
 -   **Dashboards**:
     -   **System Metrics**: CPU, RAM, Disk I/O.
     -   **Custom Metrics**: Application-specific business metrics (future).
