@@ -97,3 +97,67 @@ Inicialización del Memory Bank para el ejercicio de monitorización. Definició
 **Resumen de Acción:**
 Refactorización de la gestión de logs y secretos. Creación de `terraform.tfvars.example`, actualización de `.gitignore` y documentación de despliegue en Memory Bank.
 ---
+
+## [20260217-1255-003] - Auditoría y Cierre de Fase 1
+**Fecha:** 2026-02-17 12:55
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Auditoría Técnica de la Fase 1 (Cimientos y Seguridad)
+>
+> Actúa como Architect Agent. Antes de dar por cerrada la Fase 1 y avanzar en el plan, necesito una validación detallada de los hitos alcanzados.
+>
+> ## 1. REGISTRO (Protocolo AGENTS.md)
+> - Registra en `prompts.md` (ID: 20260217-1255-003).
+> - **Título**: Auditoría y Cierre de Fase 1.
+> - **Resumen**: Verificación de evidencias técnicas de configuración de entorno, secretos e integración IAM.
+>
+> ## 2. REVISIÓN POR PUNTOS
+> Para cada uno de los siguientes hitos, confírmame su estado y explícame EXACTAMENTE en qué archivo y qué bloque de código se ha configurado:
+>
+> 1. **Memory Bank & Rules**: ¿Dónde están los archivos de la carpeta `memory-bank/` y el archivo de reglas del agente?
+> 2. **Gestión de Secretos**: Confirma que las variables `datadog_api_key` y `datadog_app_key` están marcadas como `sensitive` y dónde está el archivo `.tfvars.example`.
+> 3. **Provider Datadog**: ¿En qué archivo se ha inicializado el provider y cómo referencia a las variables?
+> 4. **Integración AWS-Datadog**: Muéstrame el nombre del archivo donde se define el IAM Role, la Trust Policy (External ID) y el recurso `datadog_integration_aws`.
+>
+> ## 3. ACTUALIZACIÓN DE DOCUMENTACIÓN
+> - Si todo es correcto, actualiza `memory-bank/plan.md` marcando la **Fase 1** como `[COMPLETED]`.
+> - Actualiza `memory-bank/activeContext.md` indicando que estamos listos para la Fase 2 (EC2 & Agent).
+>
+> ¿Entendido? Presenta la auditoría ahora para validar el cierre de esta etapa.
+
+**Resumen de Acción:**
+Auditoría completa de Fase 1 con identificación de componente faltante crítico (datadog_integration_aws). Validación de Memory Bank, gestión de secretos, Provider y recursos IAM.
+---
+
+## [20260217-1310-004] - Corrección de Integración AWS-Datadog (Recurso Faltante)
+**Fecha:** 2026-02-17 13:10
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Corrección Crítica e Integración Final AWS-Datadog
+>
+> Actúa como Architect Agent. Acepto los resultados de la auditoría y apruebo la acción correctiva para desbloquear la Fase 1 del plan.
+>
+> ## 1. REGISTRO EN BITÁCORA (Protocolo AGENTS.md)
+> - Registra en `prompts.md` con el ID: `20260217-1310-004`.
+> - **Título**: Corrección de Integración AWS-Datadog (Recurso Faltante).
+> - **Resumen**: Implementación de `datadog_integration_aws` y `aws_caller_identity` para completar el vínculo entre cuentas.
+>
+> ## 2. ACCIÓN TÉCNICA (Terraform)
+> - **Data Source**: Añade `data "aws_caller_identity" "current" {}` para obtener el ID de la cuenta de AWS de forma dinámica.
+> - **Recurso de Integración**: Configura el bloque `resource "datadog_integration_aws" "main"` en el archivo correspondiente (ej. `datadog.tf`).
+> - **Vinculación**: Conecta el `account_id` obtenido del data source con el `role_name` del IAM Role ya creado.
+> - **Seguridad**: Asegúrate de que el `external_id` en este recurso coincida exactamente con el definido en la Trust Policy del rol de IAM.
+>
+> ## 3. ACTUALIZACIÓN DEL SHARED STATE (Memory Bank)
+> - **plan.md**: Tras aplicar el código, marca la **Fase 1: Cimientos y Seguridad** como `[COMPLETED]`.
+> - **systemPatterns.md**: Actualiza el diagrama lógico para reflejar que la integración es bidireccional y funcional.
+> - **activeContext.md**: Cambia el estado a "Fase 1 finalizada. Listo para iniciar Fase 2: Configuración del Agente en EC2".
+>
+> ## 4. ENTREGA DE EVIDENCIA
+> - Muéstrame el bloque de código de la integración y confírmame cuando los archivos del Memory Bank estén sincronizados.
+>
+> ¿Entendido? Procede con la corrección para cerrar esta etapa.
+
+**Resumen de Acción:**
+Implementación del recurso `datadog_integration_aws` para vincular IAM Role de AWS con cuenta de Datadog. Cierre técnico de Fase 1 con actualización completa del Memory Bank.
+---

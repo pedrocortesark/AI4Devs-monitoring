@@ -1,25 +1,28 @@
 # Active Context
 
 ## Current Focus
--   **Phase**: Monitoring Implementation / Refactoring.
--   **Goal**: Standardize credential management and prepare for deployment.
+-   **Phase**: Fase 1 COMPLETADA - Listo para Fase 2 (EC2 & Agent).
+-   **Goal**: Deploy infrastructure and verify Datadog Agent reporting.
 
 ## Recent Changes
--   Refactored credential management to use `.tfvars`.
--   Updated `.gitignore` to exclude sensitive files.
+-   ✅ Fase 1 completada: Integración AWS-Datadog funcional.
+-   ✅ Recurso `datadog_integration_aws` implementado correctamente.
+-   ✅ Data source `aws_caller_identity` configurado para obtener Account ID dinámicamente.
 
 
 ## Active Tasks
 -   [x] Configure Datadog Provider in Terraform.
 -   [x] Create IAM Resources for Datadog.
+-   [x] Implement AWS-Datadog Integration Resource.
 -   [x] Update User Data for Datadog Agent installation.
 -   [x] Define Datadog Dashboard in Terraform.
--   [ ] Run `terraform plan` & `apply` (User Action Required).
+-   [ ] Run `terraform apply` to deploy infrastructure (User Action Required).
 
 ## Next Steps (from `plan.md`)
--   [ ] Modificación de la instancia EC2 existente.
--   [ ] Verificación de reporte de métricas en la consola de Datadog.
+-   [ ] Deploy EC2 instances with Datadog Agent via Terraform.
+-   [ ] Verify metrics reporting in Datadog console.
+-   [ ] Validate Dashboard functionality.
 
 
 ## Open Questions/Issues
--   User needs to provide `DATADOG_API_KEY` and `DATADOG_APP_KEY`.
+-   User needs to create `terraform.tfvars` with real credentials before deployment.

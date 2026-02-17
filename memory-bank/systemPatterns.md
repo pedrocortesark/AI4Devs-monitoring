@@ -28,8 +28,14 @@ The project follows a **Monorepo** structure with clear separation between front
 -   **RESTful API**: Communication between frontend and backend.
 
 ## Monitoring Architecture
--   **Datadog Agent**: Installed on EC2 instances via User Data script.
--   **IAM Role**: dedicated `DatadogIntegrationRole` for EC2 to report metrics (if using AWS integration) or direct API key injection.
+-   **Datadog Agent**: Installed on EC2 instances via User Data script using API Key injection.
+-   **AWS-Datadog Integration**: Bidirectional connection established via:
+    -   **IAM Role**: `DatadogIntegrationRole` with SecurityAudit policy.
+    -   **Trust Relationship**: External ID validated using `datadog_app_key`.
+    -   **Datadog Resource**: `datadog_integration_aws` links AWS Account ID with IAM Role.
+-   **Data Flow**:
+    -   EC2 Agents → Datadog API (system metrics via Agent).
+    -   Datadog → AWS CloudWatch (AWS service metrics via IAM Role).
 -   **Dashboards**:
     -   **System Metrics**: CPU, RAM, Disk I/O.
     -   **Custom Metrics**: Application-specific business metrics (future).

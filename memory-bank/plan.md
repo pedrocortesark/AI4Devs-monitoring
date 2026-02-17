@@ -1,10 +1,11 @@
 # Plan de Implementación: Monitorización AWS-Datadog
 
-## Fase 1: Cimientos y Seguridad [IN PROGRESS]
+## Fase 1: Cimientos y Seguridad [COMPLETED]
 - [x] Configuración inicial del entorno (Memory Bank & Rules).
 - [x] Gestión de secretos (terraform.tfvars).
 - [x] Configuración del Provider Datadog en Terraform.
 - [x] Implementación de la Integración AWS-Datadog (IAM Roles y Trust Relationship).
+- [x] Recurso `datadog_integration_aws` vinculando cuenta AWS con Datadog.
 
 ## Fase 2: Despliegue de Infraestructura y Agente
 - [ ] Modificación de la instancia EC2 existente.
