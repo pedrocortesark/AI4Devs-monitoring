@@ -56,6 +56,23 @@ The project follows a **Monorepo** structure with clear separation between front
         - EC2 instance metadata
         - S3 bucket metrics
         - IAM activity (CloudTrail if enabled)
+-   **Visualization Layer (Dashboards)**:
+    -   **Dashboard IaC**: Defined in `dashboard.tf` using Terraform
+    -   **Dashboard ID**: `wy2-7xn-fu3` (Datadog EU)
+    -   **Dashboard URL**: https://app.datadoghq.eu/dashboard/wy2-7xn-fu3
+    -   **Layout**: Ordered layout with 6 themed sections
+    -   **Status**: ✅ Deployed and operational
+    -   **Sections**:
+        1. 🖥️ CPU Performance (user, system, idle + query value)
+        2. 💾 Memory Usage (timeseries + query values in bytes & %)
+        3. 💿 Disk I/O Performance (read_time, write_time, usage %)
+        4. 🌐 Network Traffic (bytes sent/received)
+        5. ⚖️ System Load Average (1m, 5m, 15m)
+        6. 📊 Hosts Overview (host map by service)
+    -   **Filtering**: All widgets filtered by `project:lti-monitoring`
+    -   **Grouping**: Metrics grouped by `host`, `device`, `service`
+    -   **Color Schemes**: Technical palettes (dog_classic, warm, cool, blue, orange)
+    -   **Real-time Updates**: Metrics refreshed automatically
 -   **Dashboards**:
     -   **System Metrics**: CPU, RAM, Disk I/O (Dashboard ID: 96v-e57-ws8).
     -   **Custom Metrics**: Application-specific business metrics (future).
