@@ -6,9 +6,23 @@
 -   **Database**: PostgreSQL.
 -   **ORM**: Prisma.
 -   **Containerization**: Docker, Docker Compose.
+-   **Infrastructure as Code**: Terraform.
+-   **Monitoring**: Datadog (Agent & Provider).
 
 ## Development Environment
 -   **Package Manager**: `npm`.
+-   **Testing**: Cypress (E2E), Jest (Backend Unit Tests).
+-   **Linting/Formatting**: ESLint, Prettier.
+-   **Terraform**: Version 1.x.
+-   **Cloud Provider**: AWS (us-east-1).
+
+## Deployment Workflow
+-   **Configuration**: Copy `tf/terraform.tfvars.example` to `tf/terraform.tfvars` and fill in your secrets.
+-   **Plan**: `cd tf && terraform plan`
+-   **Apply**: `cd tf && terraform apply`
+-   **Note**: Never commit `terraform.tfvars` to the repository.
+
+
 -   **Testing**: Cypress (E2E), Jest (Backend Unit Tests).
 -   **Linting/Formatting**: ESLint, Prettier.
 

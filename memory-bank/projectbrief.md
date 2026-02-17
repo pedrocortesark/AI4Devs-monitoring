@@ -14,3 +14,9 @@ To build a comprehensive Talent Tracking System (LTI) that simplifies the recrui
 -   Reliable database operations via Prisma ORM.
 -   Intuitive user interface for recruiters.
 -   Maintainable and scalable codebase following best practices (layered architecture).
+
+## Monitoring & Observability
+-   **Datadog Integration**: Full observability of backend and frontend.
+-   **Infrastructure Monitoring**: CPU, Memory, and Disk usage tracking for EC2.
+-   **Dashboards**: Centralized view of system health and metrics.
+

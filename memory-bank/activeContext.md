@@ -1,19 +1,20 @@
 # Active Context
 
 ## Current Focus
--   **System Status**: Active & Ready.
--   **Next Steps**: Awaiting user instructions for the first development task.
+-   **Phase**: Monitoring Implementation / Refactoring.
+-   **Goal**: Standardize credential management and prepare for deployment.
 
 ## Recent Changes
--   Initialized Memory Bank (`/memory-bank/`).
--   Created Agent Rules (`.agent/rules/`).
--   Verified `prompts.md`.
+-   Refactored credential management to use `.tfvars`.
+-   Updated `.gitignore` to exclude sensitive files.
+
 
 ## Active Tasks
--   [x] Analyze workspace.
--   [x] Create Memory Bank files.
--   [x] Create Master Rule `.agent/rules/00-memory-bank.md`.
--   [x] Initialize `prompts.md`.
+-   [x] Configure Datadog Provider in Terraform.
+-   [x] Create IAM Resources for Datadog.
+-   [x] Update User Data for Datadog Agent installation.
+-   [x] Define Datadog Dashboard in Terraform.
+-   [ ] Run `terraform plan` & `apply` (User Action Required).
 
 ## Open Questions/Issues
--   None.
+-   User needs to provide `DATADOG_API_KEY` and `DATADOG_APP_KEY`.

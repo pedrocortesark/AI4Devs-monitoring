@@ -26,3 +26,11 @@ The project follows a **Monorepo** structure with clear separation between front
 -   **Repository Pattern**: Used in the backend infrastructure layer to abstract data access.
 -   **Dependency Injection**: Likely used to decouple layers in the backend.
 -   **RESTful API**: Communication between frontend and backend.
+
+## Monitoring Architecture
+-   **Datadog Agent**: Installed on EC2 instances via User Data script.
+-   **IAM Role**: dedicated `DatadogIntegrationRole` for EC2 to report metrics (if using AWS integration) or direct API key injection.
+-   **Dashboards**:
+    -   **System Metrics**: CPU, RAM, Disk I/O.
+    -   **Custom Metrics**: Application-specific business metrics (future).
+

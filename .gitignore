@@ -6,7 +6,9 @@
 **/prompts_master.md
 
 **/.terraform/
-**/.terraform.lock.hcl  
+**/.terraform.lock.hcl
+*.tfvars
+
 
 # other dependencies
 **/.pnp
