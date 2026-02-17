@@ -14,7 +14,8 @@
 - [x] Verificación de conectividad de red (Security Groups + VPC por defecto).
 - [x] Ejecución de `terraform apply` (17 recursos creados exitosamente).
 - [x] Resolución de conflicto S3 bucket (nombre único con account_id).
-- [ ] Verificación de reporte de métricas en la consola de Datadog (5-10 min).
+- [x] Auditoría de configuración del agente (API key, site, conectividad).
+- [x] Verificación de reporte de métricas en la consola de Datadog (agente activo).
 
 ## Fase 3: Visualización y Alertas
 - [x] Definición del recurso `datadog_dashboard` en Terraform.

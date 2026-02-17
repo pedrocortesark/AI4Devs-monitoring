@@ -32,6 +32,9 @@ The project follows a **Monorepo** structure with clear separation between front
     -   **Installation Script**: [backend_user_data.sh](../tf/scripts/backend_user_data.sh) / [frontend_user_data.sh](../tf/scripts/frontend_user_data.sh)
     -   **Agent Version**: Datadog Agent 7 (latest stable)
     -   **API Key Injection**: `var.datadog_api_key` (marked as sensitive)
+    -   **Site Configuration**: DD_SITE="datadoghq.com" (US region)
+    -   **Hostname**: Uses EC2 default hostname (not customized)
+    -   **Tags**: Not configured (default AWS tags only)
 -   **AWS-Datadog Integration**: Bidirectional connection established via:
     -   **IAM Role**: `DatadogIntegrationRole` with SecurityAudit policy.
     -   **Trust Relationship**: External ID validated using `datadog_app_key`.
@@ -39,11 +42,17 @@ The project follows a **Monorepo** structure with clear separation between front
 -   **Network Configuration**:
     -   **VPC**: Default VPC (includes Internet Gateway)
     -   **Security Groups**: Egress rule 0.0.0.0/0 allows outbound traffic to Datadog endpoints
-    -   **Datadog Endpoints**: US region (datadoghq.com)
+    -   **Datadog Endpoints**: US region (datadoghq.com) - ports 443 (HTTPS)
 -   **Data Flow**:
-    -   EC2 Agents → Datadog API (system metrics via Agent): CPU, Memory, Disk, Network I/O
-    -   Datadog → AWS CloudWatch (AWS service metrics via IAM Role): EC2, S3, IAM metadata
+    -   **EC2 Agents → Datadog API (US)**: System metrics via Agent over HTTPS
+        - CPU, Memory, Disk, Network I/O
+        - Process monitoring
+        - Log collection (if configured)
+    -   **Datadog → AWS CloudWatch**: AWS service metrics via IAM Role
+        - EC2 instance metadata
+        - S3 bucket metrics
+        - IAM activity (CloudTrail if enabled)
 -   **Dashboards**:
-    -   **System Metrics**: CPU, RAM, Disk I/O.
+    -   **System Metrics**: CPU, RAM, Disk I/O (Dashboard ID: 96v-e57-ws8).
     -   **Custom Metrics**: Application-specific business metrics (future).
 

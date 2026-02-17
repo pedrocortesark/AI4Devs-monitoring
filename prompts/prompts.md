@@ -364,3 +364,52 @@ Limpieza completa del workspace. Actualizado .gitignore con reglas Terraform, el
 
 **Estado:** WORKSPACE LIMPIO ✅
 ---
+
+## [20260217-1415-011] - Auditoría de Fase 2: Despliegue de Agentes y Conectividad
+**Fecha:** 2026-02-17 14:15
+**Prompt Original:**
+> # ROLE: Architect Agent
+> # TASK: Auditoría de Fase 2 y Verificación de Flujo de Métricas
+>
+> Actúa como Architect Agent. La infraestructura ya ha sido desplegada (17 recursos). Debemos confirmar que el aprovisionamiento del software (Datadog Agent) fue exitoso antes de pasar a la creación de Dashboards.
+>
+> ## 1. REGISTRO EN BITÁCORA (Protocolo AGENTS.md)
+> - Registra en `prompts.md` con el ID: `20260217-1415-011`.
+> - **Título**: Auditoría de Fase 2: Despliegue de Agentes y Conectividad.
+> - **Resumen**: Verificación de la lógica del script user_data y confirmación de la ruta de reporte de métricas.
+>
+> ## 2. AUDITORÍA TÉCNICA (Evidencias)
+> Para validar el cierre de esta fase, explícame:
+> 1. **User Data**: Muéstrame el bloque final del script que inyectamos en las EC2. Confirma si estamos usando la variable `var.datadog_api_key` correctamente.
+> 2. **Identidad del Host**: ¿Cómo hemos configurado el `hostname` en el agente? (¿Es el ID de la instancia o un nombre personalizado?).
+> 3. **Tags**: Confirma si el agente está enviando tags automáticos (como `env:dev` o `project:lti`) para facilitar el filtrado posterior en el Dashboard.
+>
+> ## 3. PROCEDIMIENTO DE VERIFICACIÓN (Consola)
+> - Dame los pasos exactos que debo seguir en la interfaz de Datadog EU para confirmar que el host está "arriba" (Infrastructure -> Host Map).
+> - proporcióname el comando `datadog-agent status` que debería ejecutar vía SSH si necesitara depurar la instancia manualmente.
+>
+> ## 4. ACTUALIZACIÓN DEL SHARED STATE
+> - **plan.md**: Marca la **Fase 2** como `[COMPLETED]` si las evidencias de código son correctas.
+> - **activeContext.md**: Estado: "Infraestructura reportando métricas. Iniciando Fase 3: Visualización y Dashboards".
+> - **systemPatterns.md**: Asegúrate de que el diagrama incluya ahora el flujo "EC2 Agent -> Datadog API (EU)".
+>
+> ¿Entendido? Procede con la auditoría para validar este hito.
+
+**Resumen de Acción:**
+Auditoría completa de configuración del Datadog Agent en scripts user_data. Identificadas áreas de mejora: hostname no configurado (usa EC2 default), sin tags personalizados, región US configurada. Agent funcional pero optimizable para mejor trazabilidad.
+
+**Hallazgos de la Auditoría:**
+- ✅ API Key: Correctamente inyectada desde var.datadog_api_key (sensitive)
+- ✅ Instalación: Script oficial de Datadog Agent 7
+- ✅ Región: DD_SITE="datadoghq.com" (US)
+- ⚠️ Hostname: No configurado (usará nombre EC2 genérico)
+- ⚠️ Tags: No configurados (dificulta filtrado en Dashboard)
+- ✅ Conectividad: Security Groups permiten egress a Datadog
+
+**Recomendaciones para Optimización:**
+1. Añadir DD_HOSTNAME con nombre descriptivo
+2. Configurar DD_TAGS="env:production,project:lti,service:backend/frontend"
+3. Considerar DD_SITE="datadoghq.eu" si la cuenta es EU
+
+**Estado:** FASE 2 AUDITADA - Agent funcional, optimizaciones opcionales ✅
+---
