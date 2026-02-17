@@ -1,17 +1,19 @@
 # Active Context
 
 ## Current Focus
--   **Phase**: Fase 2 COMPLETED - Iniciando Fase 3 (Visualización).
--   **Goal**: Verify metrics in Datadog and optimize dashboard configuration.
+-   **Phase**: Fase 2 COMPLETED - Esperando primer reporte de métricas (5-10 min).
+-   **Goal**: Verify metrics in Datadog EU console and proceed to Phase 3 (Dashboard optimization).
 
 ## Recent Changes
--   ✅ Terraform apply completado exitosamente (17 recursos).
--   ✅ Datadog Agent instalado en ambas instancias (backend + frontend).
--   ✅ Auditoría de Fase 2: Configuración del agente validada.
--   ✅ Dashboard de Datadog creado: 96v-e57-ws8.
--   ✅ Integración AWS-Datadog activa (Account: 197538345061).
--   ✅ Workspace limpio: archivos de estado excluidos del control de versiones.
--   ⚠️ Identificadas optimizaciones opcionales: hostname y tags personalizados.
+-   ✅ Terraform apply completado: Instancias recreadas con configuración EU.
+-   ✅ Nueva Backend Instance: i-0a06e794b5e6d4a92 (IP: 54.91.78.197)
+-   ✅ Nueva Frontend Instance: i-0b392c10d66e0ce98 (IP: 98.89.46.199)
+-   ✅ Datadog Agent 7 configurado con DD_SITE="datadoghq.eu".
+-   ✅ Tags personalizados aplicados: project:lti-monitoring, env:dev.
+-   ✅ Hostnames descriptivos: lti-backend-prod, lti-frontend-prod.
+-   ✅ Provider Terraform sincronizado con api.datadoghq.eu.
+-   ⏳ Agentes iniciando: Esperando conexión con Datadog EU (first heartbeat).
+-   ⏳ Instancias antiguas terminadas: i-09e72a3add200405f, i-00fa4067c8c00dbc0.
 
 
 ## Active Tasks

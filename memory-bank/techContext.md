@@ -39,6 +39,29 @@
 -   **Apply**: `cd tf && terraform apply`
 -   **Note**: Never commit `terraform.tfvars` to the repository.
 
+## EC2 Instances (Current Infrastructure)
+
+**Backend Instance:**
+-   **Instance ID**: `i-0a06e794b5e6d4a92`
+-   **Public IP**: `54.91.78.197`
+-   **Instance Type**: `t2.micro`
+-   **AMI**: `ami-075d39ebbca89ed55` (Amazon Linux 2)
+-   **Hostname**: `lti-backend-prod`
+-   **Tags**: `project:lti-monitoring`, `env:dev`, `service:backend`, `component:api`
+-   **Datadog Agent**: Version 7, DD_SITE="datadoghq.eu"
+
+**Frontend Instance:**
+-   **Instance ID**: `i-0b392c10d66e0ce98`
+-   **Public IP**: `98.89.46.199`
+-   **Instance Type**: `t2.medium`
+-   **AMI**: `ami-075d39ebbca89ed55` (Amazon Linux 2)
+-   **Hostname**: `lti-frontend-prod`
+-   **Tags**: `project:lti-monitoring`, `env:dev`, `service:frontend`, `component:web`
+-   **Datadog Agent**: Version 7, DD_SITE="datadoghq.eu"
+
+**Previous Instances (Terminated):**
+-   Backend: `i-09e72a3add200405f` (54.85.210.233) - US region configuration
+-   Frontend: `i-00fa4067c8c00dbc0` (54.225.53.208) - US region configuration
 
 -   **Testing**: Cypress (E2E), Jest (Backend Unit Tests).
 -   **Linting/Formatting**: ESLint, Prettier.

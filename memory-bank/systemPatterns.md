@@ -32,9 +32,13 @@ The project follows a **Monorepo** structure with clear separation between front
     -   **Installation Script**: [backend_user_data.sh](../tf/scripts/backend_user_data.sh) / [frontend_user_data.sh](../tf/scripts/frontend_user_data.sh)
     -   **Agent Version**: Datadog Agent 7 (latest stable)
     -   **API Key Injection**: `var.datadog_api_key` (marked as sensitive)
-    -   **Site Configuration**: DD_SITE="datadoghq.com" (US region)
-    -   **Hostname**: Uses EC2 default hostname (not customized)
-    -   **Tags**: Not configured (default AWS tags only)
+    -   **Site Configuration**: DD_SITE="datadoghq.eu" (EU region) ✅
+    -   **Hostname**: Custom descriptive names (lti-backend-prod, lti-frontend-prod) ✅
+    -   **Tags**: Custom tags configured ✅
+        - project:lti-monitoring
+        - env:dev
+        - service:backend/frontend
+        - component:api/web
 -   **AWS-Datadog Integration**: Bidirectional connection established via:
     -   **IAM Role**: `DatadogIntegrationRole` with SecurityAudit policy.
     -   **Trust Relationship**: External ID validated using `datadog_app_key`.
