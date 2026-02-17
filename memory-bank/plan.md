@@ -28,9 +28,9 @@
 - [x] Ejecución de `terraform apply` para crear el dashboard en EU.
 - [x] Verificación del dashboard en consola Datadog EU.
 - [x] Validación de widgets y métricas en tiempo real.
-- [ ] (Opcional) Configuración de monitores/alertas.
+- [x] (Opcional) Configuración de monitores/alertas.
 
 ## Fase 4: Cierre y Entrega
-- [ ] Pruebas finales y capturas de pantalla.
-- [ ] Documentación final de prompts y limpieza del repositorio.
-- [ ] Creación del Pull Request.
+- [x] Pruebas finales y capturas de pantalla.
+- [x] Documentación final de prompts y limpieza del repositorio.
+- [x] Creación del Pull Request.
